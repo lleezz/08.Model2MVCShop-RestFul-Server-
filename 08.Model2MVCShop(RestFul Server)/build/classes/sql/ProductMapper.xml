@@ -31,4 +31,86 @@
 	
 	
 	
+	
+	<select id="getProduct" parameterType="int" resultMap="productSelectMap">
+		SELECT prod_no, prod_name, prod_detail, price, manufacture_day, image_file, reg_date
+		FROM product
+		WHERE prod_no = #{prodNo}
+	</select>
+	
+	
+	
+	<update id="updateProduct" parameterType="product">
+		UPDATE product
+		<set>
+			prod_name = #{prodName:VARCHAR},
+			prod_detail = #{prodDetail:VARCHAR},
+			price = #{price:NUMERIC},
+			manufacture_day = #{manuDate:VARCHAR},
+			image_file = #{fileName:VARCHAR},
+			reg_date = #{regDate:DATE}
+		</set>
+		WHERE prod_no = #{prodNo}
+	</update>
+	
+	
+
+	<select id="getProductList" parameterType="search" resultMap="productSelectMap">
+		SELECT *
+		FROM (
+				SELECT inner_table.*, ROWNUM as row_seq
+				FROM ( SELECT p.prod_no, p.prod_name, p.prod_detail, p.price, p.manufacture_day, p.image_file, p.reg_date, t.tran_status_code
+						FROM product p, transaction t
+						<where>
+							p.prod_no = t.prod_no(+)
+							<if test="searchCondition != null">
+								<if test="searchCondition == 0 and searchKeyword != '' ">
+									AND p.prod_no = #{searchKeyword}
+								</if>
+								<if test="searchCondition == 1 and searchKeyword != '' ">
+									AND p.prod_name LIKE '%'||#{searchKeyword}||'%'
+								</if>
+								<if test="searchCondition == 2 and searchKeyword != '' ">
+									AND p.price &lt;= #{searchKeyword}
+								</if>
+							</if>	
+						</where> ORDER BY p.prod_no ) inner_table
+				WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum}	
+	</select>
+	
+	
+	
+	<select id="getTotalCount" parameterType="search" resultType="int">
+		SELECT COUNT(*)
+		FROM (	SELECT prod_no, prod_name, price, reg_date	
+				FROM product
+				<if test="searchCondition != null">
+					<where>
+						<if test="searchCondition == 0 and searchKeyword != '' ">
+							prod_no = #{searchKeyword}
+						</if>
+						<if test="searchCondition == 1 and searchKeyword != '' ">
+							prod_name like '%'||#{searchKeyword}||'%'
+						</if>
+						<if test="searchCondition == 2 and searchKeyword != '' ">
+							price <![CDATA[ <=]]> #{searchKeyword}
+						</if>
+					</where>
+				</if>
+		)	countTable
+	</select>
+	
+	
+	
+	
 </mapper>
+
+
+
+
+
+
+
+
+
